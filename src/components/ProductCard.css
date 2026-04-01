@@ -94,18 +94,30 @@
 /* List mode styles */
 .product-card--list {
   flex-direction: row;
+  align-items: stretch;
 }
 
 .product-card--list .product-card__media {
-  height: 96px;
-  width: 96px;
+  position: relative;
+  height: auto;
+  align-self: stretch;
+  width: 112px;
+  min-width: 112px;
+  min-height: 96px;
   flex-shrink: 0;
-  border-radius: 0.25rem;
-  align-self: flex-start;
+  border-radius: 0.5rem 0 0 0.5rem;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.product-card--list .product-card__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-card--list .product-card__body {
