@@ -204,8 +204,8 @@ export default function AdsListPage() {
             )}
 
             {isLoading ? (
-              <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-4"}>
-                {Array.from({ length: 6 }).map((_, i) => (
+              <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 justify-items-center" : "space-y-4"}>
+                {Array.from({ length: 10 }).map((_, i) => (
                   <article key={i} className={`product-card ${viewMode === 'list' ? 'product-card--list' : 'product-card--grid'}`}>
                     <div className="product-card__media">
                       <Skeleton className="h-full w-full" />
@@ -226,7 +226,7 @@ export default function AdsListPage() {
               </div>
             ) : (
               <>
-                <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3"}>
+                <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 justify-items-center" : "space-y-3"}>
                   {data?.items.map(item => (
                     <article
                       key={item.id}
@@ -261,27 +261,35 @@ export default function AdsListPage() {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
+                  <div className="flex items-center justify-start gap-1 mt-8">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="icon"
+                      className="h-9 w-9"
                       disabled={page <= 1}
                       onClick={() => updateParams({ page: String(page - 1) })}
                     >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Назад
+                      <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm text-muted-foreground px-3">
-                      {page} из {totalPages}
-                    </span>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <Button
+                        key={p}
+                        variant={p === page ? 'default' : 'outline'}
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => updateParams({ page: String(p) })}
+                      >
+                        {p}
+                      </Button>
+                    ))}
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="icon"
+                      className="h-9 w-9"
                       disabled={page >= totalPages}
                       onClick={() => updateParams({ page: String(page + 1) })}
                     >
-                      Вперёд
-                      <ChevronRight className="h-4 w-4 ml-1" />
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
