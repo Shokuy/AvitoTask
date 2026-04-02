@@ -34,6 +34,7 @@ export interface Item {
   price: number;
   image?: string;
   createdAt?: string;
+  updatedAt?: string;
   params: ItemParams;
   needsRevision: boolean;
 }

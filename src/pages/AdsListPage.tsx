@@ -91,78 +91,73 @@ export default function AdsListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <section className="bg-white border-b">
-        <div className="container mx-auto px-4 py-6">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold">Мои объявления</h1>
-            {data && (
-              <p className="text-muted-foreground mt-2">
-                {data.total} объявлений
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-            <form className="flex-1 relative" onSubmit={e => e.preventDefault()}>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Найти объявление..."
-                value={search}
-                onChange={e => {
-                  setSearch(e.target.value);
-                  updateParams({ q: e.target.value || undefined });
-                }}
-                className="pl-9 h-10"
-              />
-            </form>
-
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="h-10 w-10 p-0"
-              >
-                <Grid3x3 className="h-5 w-5" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="h-10 w-10 p-0"
-              >
-                <List className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <Select
-              value={`${sortColumn}-${sortDirection}`}
-              onValueChange={v => {
-                const [col, dir] = v.split('-');
-                updateParams({ sortColumn: col, sortDirection: dir });
-              }}
-            >
-              <SelectTrigger className="h-10 w-56">
-                <SelectValue placeholder="Сортировка" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt-desc">Сначала новые</SelectItem>
-                <SelectItem value="createdAt-asc">Сначала старые</SelectItem>
-                <SelectItem value="title-asc">По названию А-Я</SelectItem>
-                <SelectItem value="title-desc">По названию Я-А</SelectItem>
-                <SelectItem value="price-asc">Сначала дешевле</SelectItem>
-                <SelectItem value="price-desc">Сначала дороже</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </section>
-
+    <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Мои объявления</h1>
+          {data && (
+            <p className="text-muted-foreground mt-2">
+              {data.total} объявлений
+            </p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl p-3 flex flex-col md:flex-row gap-3 items-start md:items-center mb-6">
+          <form className="flex-1 relative" onSubmit={e => e.preventDefault()}>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Найти объявление..."
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                updateParams({ q: e.target.value || undefined });
+              }}
+              className="pl-9 h-10"
+            />
+          </form>
+
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="h-10 w-10 p-0"
+            >
+              <Grid3x3 className="h-5 w-5" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="h-10 w-10 p-0"
+            >
+              <List className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <Select
+            value={`${sortColumn}-${sortDirection}`}
+            onValueChange={v => {
+              const [col, dir] = v.split('-');
+              updateParams({ sortColumn: col, sortDirection: dir });
+            }}
+          >
+            <SelectTrigger className="h-10 w-56">
+              <SelectValue placeholder="Сортировка" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="createdAt-desc">Сначала новые</SelectItem>
+              <SelectItem value="createdAt-asc">Сначала старые</SelectItem>
+              <SelectItem value="title-asc">По названию А-Я</SelectItem>
+              <SelectItem value="title-desc">По названию Я-А</SelectItem>
+              <SelectItem value="price-asc">Сначала дешевле</SelectItem>
+              <SelectItem value="price-desc">Сначала дороже</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex flex-col md:flex-row gap-6">
-          <aside className="w-full md:w-60 shrink-0">
-            <div className="bg-card rounded-lg border p-4 space-y-4 sticky top-6">
+          <aside className="w-full md:w-60 shrink-0 sticky top-6">
+            <div className="bg-card rounded-lg border p-4 space-y-4">
               <h3 className="font-semibold text-sm">Фильтры</h3>
 
               <div className="space-y-2">
@@ -178,7 +173,7 @@ export default function AdsListPage() {
                 ))}
               </div>
 
-              <div className="border-t pt-3 flex items-center justify-between">
+              <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
                 <label htmlFor="needs-work" className="text-sm cursor-pointer font-medium">
                   Только требующие доработок
                 </label>
@@ -188,11 +183,14 @@ export default function AdsListPage() {
                   onCheckedChange={v => updateParams({ needsRevision: v ? 'true' : undefined })}
                 />
               </div>
-
-              <Button variant="outline" size="sm" className="w-full" onClick={resetFilters}>
-                Сбросить фильтры
-              </Button>
             </div>
+
+            <button
+              onClick={resetFilters}
+              className="w-full mt-3 py-2.5 text-sm text-gray-400 hover:text-gray-500 bg-white rounded-lg transition-colors"
+            >
+              Сбросить фильтры
+            </button>
           </aside>
 
           <main className="flex-1 min-w-0">
@@ -226,7 +224,7 @@ export default function AdsListPage() {
               </div>
             ) : (
               <>
-                <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 justify-items-center" : "space-y-3"}>
+                <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-2 gap-x-2 justify-items-center" : "space-y-3"}>
                   {data?.items.map(item => (
                     <article
                       key={item.id}

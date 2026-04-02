@@ -41,11 +41,12 @@
   display: inline-block;
   font-size: 0.75rem;
   padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  background-color: #f0f0f0;
+  border-radius: 8px;
+  background-color: transparent;
   color: #6b7280;
   margin-bottom: 0.5rem;
   width: fit-content;
+  border: 1px solid #e5e7eb;
 }
 
 .product-card__title {
@@ -128,7 +129,7 @@
 .product-card--grid {
   flex-direction: column;
   width: 200px;
-  height: 268px;
+  height: 270px;
 }
 
 .product-card--grid .product-card__media {
@@ -136,7 +137,7 @@
 }
 
 .product-card--grid .product-card__body {
-  padding: 0.5rem 0.75rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   overflow: hidden;
 }
 

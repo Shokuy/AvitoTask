@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { fetchItem } from '@/lib/api';
-import { CATEGORY_LABELS, Category, AutoItemParams, RealEstateItemParams, ElectronicsItemParams } from '@/types/api';
+import { Category, AutoItemParams, RealEstateItemParams, ElectronicsItemParams } from '@/types/api';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, ArrowLeft, Edit, Package, Calendar } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Package } from 'lucide-react';
 
 function getParamLabels(category: Category, params: Record<string, unknown>): { label: string; value: string }[] {
   const result: { label: string; value: string }[] = [];
@@ -103,86 +102,101 @@ export default function AdViewPage() {
   const paramLabels = getParamLabels(item.category, item.params as Record<string, unknown>);
   const missingFields = getMissingFields(item.category, item as unknown as Record<string, unknown>);
 
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/ads">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Назад
-          </Link>
-        </Button>
-      </div>
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) +
+      ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  };
 
-      <div className="bg-card rounded-lg border overflow-hidden">
-        {/* Image */}
-        <div className="h-64 bg-muted flex items-center justify-center">
-          {item.image ? (
-            <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
-          ) : (
-            <Package className="h-16 w-16 text-muted-foreground/30" />
-          )}
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="bg-gray-100 px-8 lg:px-16 pt-6 pb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/ads">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Назад
+            </Link>
+          </Button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="space-y-2">
-              <Badge variant="secondary">{CATEGORY_LABELS[item.category]}</Badge>
-              <h1 className="text-2xl font-bold">{item.title}</h1>
-              <p className="text-3xl font-bold text-primary">
-                {item.price.toLocaleString('ru-RU')} ₽
-              </p>
-              {item.createdAt && (
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {new Date(item.createdAt).toLocaleDateString('ru-RU', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                  })}
-                </p>
-              )}
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold mb-3">{item.title}</h1>
             <Button onClick={() => navigate(`/ads/${id}/edit`)}>
-              <Edit className="h-4 w-4 mr-2" />
               Редактировать
+              <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
+                <path d="M2.92701 12.8571C2.96719 12.8571 3.00737 12.8531 3.04755 12.8471L6.42656 12.2545C6.46674 12.2464 6.50491 12.2283 6.53304 12.1982L15.0489 3.68237C15.0675 3.66378 15.0823 3.64171 15.0924 3.6174C15.1024 3.5931 15.1076 3.56705 15.1076 3.54074C15.1076 3.51443 15.1024 3.48837 15.0924 3.46407C15.0823 3.43977 15.0675 3.41769 15.0489 3.39911L11.71 0.058259C11.6719 0.0200893 11.6217 0 11.5674 0C11.5132 0 11.4629 0.0200893 11.4248 0.058259L2.90893 8.57411C2.87879 8.60424 2.86071 8.6404 2.85268 8.68058L2.26004 12.0596C2.2405 12.1672 2.24748 12.278 2.28039 12.3823C2.31329 12.4866 2.37113 12.5813 2.44888 12.6583C2.58147 12.7868 2.74821 12.8571 2.92701 12.8571ZM4.28103 9.35357L11.5674 2.0692L13.04 3.54174L5.75357 10.8261L3.96763 11.1415L4.28103 9.35357ZM15.4286 14.5446H0.642857C0.287277 14.5446 0 14.8319 0 15.1875V15.9107C0 15.9991 0.0723214 16.0714 0.160714 16.0714H15.9107C15.9991 16.0714 16.0714 15.9991 16.0714 15.9107V15.1875C16.0714 14.8319 15.7842 14.5446 15.4286 14.5446Z" fill="white"/>
+              </svg>
             </Button>
           </div>
-
-          {/* Missing fields warning */}
-          {missingFields.length > 0 && (
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 font-medium text-sm mb-2">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-                Требуются доработки
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Не заполнены: {missingFields.join(', ')}
+          <div className="text-right">
+            <p className="text-2xl font-bold">{item.price.toLocaleString('ru-RU')} ₽</p>
+            {item.createdAt && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Опубликовано: {formatDate(item.createdAt)}
               </p>
-            </div>
-          )}
+            )}
+            {item.updatedAt && (
+              <p className="text-sm text-muted-foreground">
+                Отредактировано: {formatDate(item.updatedAt)}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
-          {/* Params */}
-          {paramLabels.length > 0 && (
-            <div>
-              <h2 className="font-semibold mb-3">Характеристики</h2>
-              <div className="grid grid-cols-2 gap-2">
-                {paramLabels.map(p => (
-                  <div key={p.label} className="flex justify-between bg-muted/50 rounded px-3 py-2 text-sm">
-                    <span className="text-muted-foreground">{p.label}</span>
-                    <span className="font-medium">{p.value}</span>
-                  </div>
-                ))}
+      <div className="border-t border-gray-200 mx-8 lg:mx-16" />
+
+      <div className="px-8 lg:px-16 py-8">
+        <div className="flex flex-col md:flex-row gap-6" style={{ maxWidth: '900px' }}>
+          <div className="shrink-0" style={{ width: '480px' }}>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center overflow-hidden" style={{ height: '360px' }}>
+              {item.image ? (
+                <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+              ) : (
+                <Package className="h-16 w-16 text-gray-300" />
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 space-y-6 min-w-0">
+            {missingFields.length > 0 && (
+              <div className="rounded-xl p-4 shadow-sm" style={{ backgroundColor: '#FFF3E0', boxShadow: '0 1px 6px rgba(245, 158, 11, 0.15)' }}>
+                <div className="flex items-center gap-2 font-semibold text-sm mb-2">
+                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full text-white text-xs font-bold" style={{ backgroundColor: '#F59E0B' }}>!</span>
+                  Требуются доработки
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">
+                  У объявления не заполнены поля:
+                </p>
+                <ul className="list-disc list-inside text-sm text-muted-foreground space-y-0.5">
+                  {missingFields.map(f => <li key={f}>{f}</li>)}
+                </ul>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Description */}
-          {item.description && (
-            <div>
-              <h2 className="font-semibold mb-2">Описание</h2>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.description}</p>
-            </div>
-          )}
+            {paramLabels.length > 0 && (
+              <div>
+                <h2 className="text-lg font-bold mb-3">Характеристики</h2>
+                <div className="space-y-2">
+                  {paramLabels.map(p => (
+                    <div key={p.label} className="flex gap-2 text-sm">
+                      <span className="text-muted-foreground min-w-[120px]">{p.label}</span>
+                      <span className="font-medium">{p.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-8" style={{ maxWidth: '480px' }}>
+          <h2 className="text-lg font-bold mb-2">Описание</h2>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {item.description || 'Отсутствует'}
+          </p>
         </div>
       </div>
     </div>
