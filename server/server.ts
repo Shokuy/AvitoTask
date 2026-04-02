@@ -20,8 +20,15 @@ fastify.use((_, __, next) =>
 );
 
 // Настройка CORS
-fastify.use((_, reply, next) => {
+fastify.use((req, reply, next) => {
   reply.setHeader('Access-Control-Allow-Origin', '*');
+  reply.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  reply.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    reply.statusCode = 204;
+    reply.end();
+    return;
+  }
   next();
 });
 
@@ -105,9 +112,11 @@ fastify.get<ItemsGetRequest>('/items', request => {
       })
       .slice(skip, skip + limit)
       .map(item => ({
+        id: item.id,
         category: item.category,
         title: item.title,
         price: item.price,
+        image: item.image,
         needsRevision: doesItemNeedRevision(item),
       })),
     total: filteredItems.length,
@@ -146,8 +155,7 @@ fastify.put<ItemUpdateRequest>('/items/:id', (request, reply) => {
     });
 
     ITEMS[itemIndex] = {
-      id: ITEMS[itemIndex].id,
-      createdAt: ITEMS[itemIndex].createdAt,
+      ...ITEMS[itemIndex],
       updatedAt: new Date().toISOString(),
       ...parsedData,
     };

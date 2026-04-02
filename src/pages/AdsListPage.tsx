@@ -46,14 +46,10 @@ export default function AdsListPage() {
       categories: selectedCategories.length ? selectedCategories.join(',') : undefined,
       needsRevision: needsRevision || undefined,
     }).then(result => {
-      const skip = (page - 1) * ITEMS_PER_PAGE;
-      let items = result.items.map((item, idx) => ({
-        ...item,
-        id: String(skip + idx + 1)
-      }));
+      let items = result.items;
       
       if (sortColumn === 'price') {
-        items = items.sort((a, b) => {
+        items = [...items].sort((a, b) => {
           const diff = a.price - b.price;
           return sortDirection === 'asc' ? diff : -diff;
         });

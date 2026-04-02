@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, ArrowLeft, Sparkles, DollarSign, Loader2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Lightbulb, Loader2, X } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -84,11 +84,15 @@ export default function AdEditPage() {
       clearDraft(id!);
       queryClient.invalidateQueries({ queryKey: ['item', id] });
       queryClient.invalidateQueries({ queryKey: ['items'] });
-      toast({ title: 'Сохранено!' });
+      toast({ title: 'Изменения сохранены', variant: 'success' as any });
       navigate(`/ads/${id}`);
     },
-    onError: (err: Error) => {
-      toast({ title: 'Ошибка', description: err.message, variant: 'destructive' });
+    onError: () => {
+      toast({
+        title: 'Ошибка сохранения',
+        description: 'При попытке сохранить изменения произошла ошибка. Попробуйте ещё раз или зайдите позже.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -138,10 +142,10 @@ export default function AdEditPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
+      <div className="min-h-screen bg-white px-8 lg:px-16 py-8" style={{ maxWidth: '680px' }}>
+        <Skeleton className="h-8 w-48 mb-6" />
+        <Skeleton className="h-10 w-full mb-4" />
+        <Skeleton className="h-10 w-full mb-4" />
         <Skeleton className="h-32 w-full" />
       </div>
     );
@@ -149,7 +153,7 @@ export default function AdEditPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="min-h-screen bg-white px-8 lg:px-16 py-8">
         <div className="bg-destructive/10 text-destructive rounded-lg p-4 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" />
           {(error as Error).message}
@@ -160,143 +164,207 @@ export default function AdEditPage() {
 
   const params = form.params as Record<string, unknown>;
 
+  const aiButtonClass = "inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-4 py-2 transition-colors border-none cursor-pointer";
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to={`/ads/${id}`}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Назад
-          </Link>
-        </Button>
-        <h1 className="text-xl font-bold">Редактирование объявления</h1>
-      </div>
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto px-8 py-8" style={{ maxWidth: '680px' }}>
+        <h1 className="text-2xl font-bold mb-8">Редактирование объявления</h1>
 
-      <form onSubmit={handleSubmit} className="bg-card rounded-lg border p-6 space-y-6">
-        {/* Category */}
-        <div className="space-y-2">
-          <Label>Категория *</Label>
-          <Select value={form.category} onValueChange={(v) => handleCategoryChange(v as Category)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map(c => (
-                <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Title */}
-        <div className="space-y-2">
-          <Label>Название *</Label>
-          <Input value={form.title} onChange={e => updateField('title', e.target.value)} />
-        </div>
-
-        {/* Price */}
-        <div className="space-y-2">
-          <Label>Цена *</Label>
-          <Input
-            type="number"
-            min={0}
-            value={form.price}
-            onChange={e => updateField('price', Number(e.target.value))}
-          />
-        </div>
-
-        {/* Category-specific params */}
-        <CategoryParams category={form.category} params={params} updateParam={updateParam} />
-
-        {/* Description */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Описание</Label>
-            <span className="text-xs text-muted-foreground">{(form.description || '').length} символов</span>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-1.5">
+            <Label className="text-sm text-gray-600">Категория</Label>
+            <Select value={form.category} onValueChange={(v) => handleCategoryChange(v as Category)}>
+              <SelectTrigger className="bg-white border-gray-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map(c => (
+                  <SelectItem key={c} value={c}>{CATEGORY_LABELS[c]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Textarea
-            value={form.description || ''}
-            onChange={e => updateField('description', e.target.value)}
-            rows={5}
-            placeholder="Добавьте описание вашего товара..."
-          />
-        </div>
 
-        {/* AI Section */}
-        <div className="border-t pt-6 space-y-4">
-          <h3 className="font-semibold flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            AI-ассистент
-          </h3>
+          <div className="space-y-1.5">
+            <Label className="text-sm text-gray-600">
+              <span className="text-red-500 mr-0.5">*</span> Название
+            </Label>
+            <div className="relative">
+              <Input
+                value={form.title}
+                onChange={e => updateField('title', e.target.value)}
+                className={`bg-white border-gray-300 pr-8 ${!form.title.trim() ? 'border-amber-400' : ''}`}
+              />
+              {form.title && (
+                <button type="button" onClick={() => updateField('title', '')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
+          <div className="space-y-1.5">
+            <Label className="text-sm text-gray-600">
+              <span className="text-red-500 mr-0.5">*</span> Цена
+            </Label>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Input
+                  type="number"
+                  min={0}
+                  value={form.price}
+                  onChange={e => updateField('price', Number(e.target.value))}
+                  className={`bg-white border-gray-300 pr-8 ${!form.price ? 'border-amber-400' : ''}`}
+                />
+                {form.price > 0 && (
+                  <button type="button" onClick={() => updateField('price', 0)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={aiLoading !== null}
+                onClick={() => requestAI('price')}
+                className={aiButtonClass}
+                style={{ backgroundColor: '#FFF3E0', color: '#E67E22', whiteSpace: 'nowrap' }}
+              >
+                {aiLoading === 'price' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Lightbulb className="h-4 w-4" />
+                )}
+                Узнать рыночную цену
+              </button>
+            </div>
+          </div>
+
+          {aiPrice && (
+            <div className="rounded-xl p-4 text-sm space-y-2" style={{ backgroundColor: '#FFF8F0', border: '1px solid #FDEBD0' }}>
+              <p className="font-medium">Ответ AI:</p>
+              <p className="text-gray-600 whitespace-pre-wrap">{aiPrice}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
+                  const match = aiPrice.match(/[\d\s]+/);
+                  if (match) {
+                    const price = Number(match[0].replace(/\s/g, ''));
+                    if (price > 0) updateField('price', price);
+                  }
+                  toast({ title: 'Цена применена' });
+                }}>
+                  Применить
+                </Button>
+                <button type="button" className="text-sm text-gray-500 hover:text-gray-700" onClick={() => setAiPrice('')}>
+                  Закрыть
+                </button>
+              </div>
+              <button
+                type="button"
+                disabled={aiLoading !== null}
+                onClick={() => requestAI('price')}
+                className={aiButtonClass + ' mt-1'}
+                style={{ backgroundColor: '#FFF3E0', color: '#E67E22' }}
+              >
+                {aiLoading === 'price' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Lightbulb className="h-4 w-4" />
+                )}
+                Повторить запрос
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <h2 className="text-base font-semibold">Характеристики</h2>
+            <CategoryParams category={form.category} params={params} updateParam={updateParam} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm text-gray-600">Описание</Label>
+            <div className="relative">
+              <Textarea
+                value={form.description || ''}
+                onChange={e => updateField('description', e.target.value)}
+                rows={4}
+                maxLength={1000}
+                className="bg-white border-gray-300 resize-none"
+              />
+              <span className="absolute bottom-2 right-3 text-xs text-gray-400">
+                {(form.description || '').length} / 1000
+              </span>
+            </div>
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               disabled={aiLoading !== null}
               onClick={() => requestAI('description')}
+              className={aiButtonClass}
+              style={{ backgroundColor: '#FFF3E0', color: '#E67E22' }}
             >
               {aiLoading === 'description' ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Sparkles className="h-4 w-4 mr-1" />
+                <Lightbulb className="h-4 w-4" />
               )}
               {form.description ? 'Улучшить описание' : 'Придумать описание'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={aiLoading !== null}
-              onClick={() => requestAI('price')}
-            >
-              {aiLoading === 'price' ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <DollarSign className="h-4 w-4 mr-1" />
-              )}
-              Узнать рыночную цену
-            </Button>
+            </button>
           </div>
 
           {aiDescription && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium">Предложенное описание:</p>
-              <p className="text-sm whitespace-pre-wrap">{aiDescription}</p>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => {
+            <div className="rounded-xl p-4 text-sm space-y-2" style={{ backgroundColor: '#FFF8F0', border: '1px solid #FDEBD0' }}>
+              <p className="font-medium">Предложенное описание:</p>
+              <p className="text-gray-600 whitespace-pre-wrap">{aiDescription}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
                   updateField('description', aiDescription);
                   setAiDescription('');
                   toast({ title: 'Описание применено' });
-                }}
-              >
-                Применить
-              </Button>
+                }}>
+                  Применить
+                </Button>
+                <button type="button" className="text-sm text-gray-500 hover:text-gray-700" onClick={() => setAiDescription('')}>
+                  Закрыть
+                </button>
+              </div>
             </div>
           )}
 
-          {aiPrice && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium">Рекомендация по цене:</p>
-              <p className="text-sm">{aiPrice}</p>
-            </div>
-          )}
-        </div>
+          <div className="flex gap-3 pt-4">
+            <Button type="submit" disabled={mutation.isPending} className="rounded-full px-6">
+              {mutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Сохранить
+            </Button>
+            <Button type="button" variant="outline" className="rounded-full px-6" onClick={() => navigate(`/ads/${id}`)}>
+              Отменить
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
-        {/* Actions */}
-        <div className="border-t pt-6 flex gap-3">
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Сохранить
-          </Button>
-          <Button type="button" variant="outline" onClick={() => navigate(`/ads/${id}`)}>
-            Отменить
-          </Button>
-        </div>
-      </form>
+function ClearableInput({ value, onChange, onClear, warn, ...props }: {
+  value: string | number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClear: () => void;
+  warn?: boolean;
+} & Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange'>) {
+  const hasValue = value !== '' && value !== 0;
+  return (
+    <div className="relative">
+      <Input
+        value={value}
+        onChange={onChange}
+        className={`bg-white border-gray-300 pr-8 ${warn && !hasValue ? 'border-amber-400' : ''}`}
+        {...props}
+      />
+      {hasValue && (
+        <button type="button" onClick={onClear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <X className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }
@@ -306,38 +374,51 @@ function CategoryParams({ category, params, updateParam }: {
   params: Record<string, unknown>;
   updateParam: (key: string, value: unknown) => void;
 }) {
+  const fieldClass = "space-y-1.5";
+  const labelClass = "text-sm text-gray-600";
+  const inputClass = "bg-white border-gray-300";
+
+  const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
+    <Label className={labelClass}><span className="text-red-500 mr-0.5">*</span> {children}</Label>
+  );
+  const OptionalLabel = ({ children }: { children: React.ReactNode }) => (
+    <Label className={labelClass}>{children}</Label>
+  );
+
+  const warnClass = (val: unknown) => !val ? 'border-amber-400' : '';
+
   if (category === 'auto') {
     return (
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Марка</Label>
-          <Input value={(params.brand as string) || ''} onChange={e => updateParam('brand', e.target.value)} />
+      <div className="space-y-4">
+        <div className={fieldClass}>
+          <OptionalLabel>Марка</OptionalLabel>
+          <ClearableInput warn value={(params.brand as string) || ''} onChange={e => updateParam('brand', e.target.value)} onClear={() => updateParam('brand', '')} />
         </div>
-        <div className="space-y-2">
-          <Label>Модель</Label>
-          <Input value={(params.model as string) || ''} onChange={e => updateParam('model', e.target.value)} />
+        <div className={fieldClass}>
+          <OptionalLabel>Модель</OptionalLabel>
+          <ClearableInput warn value={(params.model as string) || ''} onChange={e => updateParam('model', e.target.value)} onClear={() => updateParam('model', '')} />
         </div>
-        <div className="space-y-2">
-          <Label>Год выпуска</Label>
-          <Input type="number" value={(params.yearOfManufacture as number) || ''} onChange={e => updateParam('yearOfManufacture', Number(e.target.value))} />
+        <div className={fieldClass}>
+          <OptionalLabel>Год выпуска</OptionalLabel>
+          <ClearableInput warn type="number" value={(params.yearOfManufacture as number) || ''} onChange={e => updateParam('yearOfManufacture', Number(e.target.value))} onClear={() => updateParam('yearOfManufacture', '')} />
         </div>
-        <div className="space-y-2">
-          <Label>КПП</Label>
+        <div className={fieldClass}>
+          <OptionalLabel>КПП</OptionalLabel>
           <Select value={(params.transmission as string) || ''} onValueChange={v => updateParam('transmission', v)}>
-            <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+            <SelectTrigger className={`${inputClass} ${warnClass(params.transmission)}`}><SelectValue placeholder="Выберите" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="automatic">Автомат</SelectItem>
               <SelectItem value="manual">Механика</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label>Пробег (км)</Label>
-          <Input type="number" value={(params.mileage as number) || ''} onChange={e => updateParam('mileage', Number(e.target.value))} />
+        <div className={fieldClass}>
+          <OptionalLabel>Пробег (км)</OptionalLabel>
+          <ClearableInput warn type="number" value={(params.mileage as number) || ''} onChange={e => updateParam('mileage', Number(e.target.value))} onClear={() => updateParam('mileage', '')} />
         </div>
-        <div className="space-y-2">
-          <Label>Мощность (л.с.)</Label>
-          <Input type="number" value={(params.enginePower as number) || ''} onChange={e => updateParam('enginePower', Number(e.target.value))} />
+        <div className={fieldClass}>
+          <OptionalLabel>Мощность (л.с.)</OptionalLabel>
+          <ClearableInput warn type="number" value={(params.enginePower as number) || ''} onChange={e => updateParam('enginePower', Number(e.target.value))} onClear={() => updateParam('enginePower', '')} />
         </div>
       </div>
     );
@@ -345,11 +426,11 @@ function CategoryParams({ category, params, updateParam }: {
 
   if (category === 'real_estate') {
     return (
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Тип</Label>
+      <div className="space-y-4">
+        <div className={fieldClass}>
+          <RequiredLabel>Тип</RequiredLabel>
           <Select value={(params.type as string) || ''} onValueChange={v => updateParam('type', v)}>
-            <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+            <SelectTrigger className={`${inputClass} ${warnClass(params.type)}`}><SelectValue placeholder="Выберите" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="flat">Квартира</SelectItem>
               <SelectItem value="house">Дом</SelectItem>
@@ -357,29 +438,28 @@ function CategoryParams({ category, params, updateParam }: {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label>Адрес</Label>
-          <Input value={(params.address as string) || ''} onChange={e => updateParam('address', e.target.value)} />
+        <div className={fieldClass}>
+          <OptionalLabel>Адрес</OptionalLabel>
+          <ClearableInput warn value={(params.address as string) || ''} onChange={e => updateParam('address', e.target.value)} onClear={() => updateParam('address', '')} />
         </div>
-        <div className="space-y-2">
-          <Label>Площадь (м²)</Label>
-          <Input type="number" value={(params.area as number) || ''} onChange={e => updateParam('area', Number(e.target.value))} />
+        <div className={fieldClass}>
+          <OptionalLabel>Площадь (м²)</OptionalLabel>
+          <ClearableInput warn type="number" value={(params.area as number) || ''} onChange={e => updateParam('area', Number(e.target.value))} onClear={() => updateParam('area', '')} />
         </div>
-        <div className="space-y-2">
-          <Label>Этаж</Label>
-          <Input type="number" value={(params.floor as number) || ''} onChange={e => updateParam('floor', Number(e.target.value))} />
+        <div className={fieldClass}>
+          <OptionalLabel>Этаж</OptionalLabel>
+          <ClearableInput warn type="number" value={(params.floor as number) || ''} onChange={e => updateParam('floor', Number(e.target.value))} onClear={() => updateParam('floor', '')} />
         </div>
       </div>
     );
   }
 
-  // electronics
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label>Тип</Label>
+    <div className="space-y-4">
+      <div className={fieldClass}>
+        <RequiredLabel>Тип</RequiredLabel>
         <Select value={(params.type as string) || ''} onValueChange={v => updateParam('type', v)}>
-          <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+          <SelectTrigger className={`${inputClass} ${warnClass(params.type)}`}><SelectValue placeholder="Выберите" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="phone">Телефон</SelectItem>
             <SelectItem value="laptop">Ноутбук</SelectItem>
@@ -387,27 +467,27 @@ function CategoryParams({ category, params, updateParam }: {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label>Бренд</Label>
-        <Input value={(params.brand as string) || ''} onChange={e => updateParam('brand', e.target.value)} />
+      <div className={fieldClass}>
+        <OptionalLabel>Бренд</OptionalLabel>
+        <ClearableInput warn value={(params.brand as string) || ''} onChange={e => updateParam('brand', e.target.value)} onClear={() => updateParam('brand', '')} />
       </div>
-      <div className="space-y-2">
-        <Label>Модель</Label>
-        <Input value={(params.model as string) || ''} onChange={e => updateParam('model', e.target.value)} />
+      <div className={fieldClass}>
+        <OptionalLabel>Модель</OptionalLabel>
+        <ClearableInput warn value={(params.model as string) || ''} onChange={e => updateParam('model', e.target.value)} onClear={() => updateParam('model', '')} />
       </div>
-      <div className="space-y-2">
-        <Label>Состояние</Label>
+      <div className={fieldClass}>
+        <OptionalLabel>Цвет</OptionalLabel>
+        <ClearableInput warn value={(params.color as string) || ''} onChange={e => updateParam('color', e.target.value)} onClear={() => updateParam('color', '')} />
+      </div>
+      <div className={fieldClass}>
+        <OptionalLabel>Состояние</OptionalLabel>
         <Select value={(params.condition as string) || ''} onValueChange={v => updateParam('condition', v)}>
-          <SelectTrigger><SelectValue placeholder="Выберите" /></SelectTrigger>
+          <SelectTrigger className={`${inputClass} ${warnClass(params.condition)}`}><SelectValue placeholder="Выберите" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="new">Новое</SelectItem>
             <SelectItem value="used">Б/У</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      <div className="space-y-2">
-        <Label>Цвет</Label>
-        <Input value={(params.color as string) || ''} onChange={e => updateParam('color', e.target.value)} />
       </div>
     </div>
   );

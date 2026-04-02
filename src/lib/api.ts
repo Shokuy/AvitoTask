@@ -24,11 +24,20 @@ export async function fetchItem(id: string): Promise<Item> {
 }
 
 export async function updateItem(id: string, data: ItemUpdateIn): Promise<Item> {
+  const cleanParams = Object.fromEntries(
+    Object.entries(data.params as Record<string, unknown>).filter(
+      ([, v]) => v !== '' && v !== undefined && v !== null
+    )
+  );
+
   const res = await fetch(`${API_BASE}/items/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ ...data, params: cleanParams }),
   });
-  if (!res.ok) throw new Error('Ошибка сохранения');
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error ? JSON.stringify(err.error) : 'Ошибка сохранения');
+  }
   return res.json();
 }
