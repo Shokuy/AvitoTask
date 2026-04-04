@@ -12,6 +12,7 @@ import { Search, ChevronLeft, ChevronRight, AlertTriangle, Package, Grid3x3, Lis
 import { useState, useEffect } from 'react';
 import '@/components/ProductCard.css';
 import { loadDraft } from '@/lib/drafts';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const ITEMS_PER_PAGE = 10;
 const CATEGORIES: Category[] = ['electronics', 'auto', 'real_estate'];
@@ -88,10 +89,11 @@ export default function AdsListPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">Мои объявления</h1>
+          <ThemeToggle />
           {data && (
             <p className="text-muted-foreground mt-2">
               {data.total} объявлений
@@ -99,7 +101,7 @@ export default function AdsListPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl p-3 flex flex-col md:flex-row gap-3 items-start md:items-center mb-6">
+        <div className="bg-card rounded-xl p-3 flex flex-col md:flex-row gap-3 items-start md:items-center mb-6">
           <form className="flex-1 relative" onSubmit={e => e.preventDefault()}>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -170,7 +172,7 @@ export default function AdsListPage() {
                 ))}
               </div>
 
-              <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
+              <div className="border-t border-border pt-3 flex items-center justify-between">
                 <label htmlFor="needs-work" className="text-sm cursor-pointer font-medium">
                   Только требующие доработок
                 </label>
@@ -184,7 +186,7 @@ export default function AdsListPage() {
 
             <button
               onClick={resetFilters}
-              className="w-full mt-3 py-2.5 text-sm text-gray-400 hover:text-gray-500 bg-white rounded-lg transition-colors"
+              className="w-full mt-3 py-2.5 text-sm text-muted-foreground hover:text-foreground bg-card rounded-lg transition-colors"
             >
               Сбросить фильтры
             </button>
@@ -236,7 +238,7 @@ export default function AdsListPage() {
                           {item.image ? (
                             <img src={item.image} alt={title} className="product-card__image" />
                           ) : (
-                            <Package className="h-12 w-12 text-gray-300" />
+                            <Package className="h-12 w-12 text-muted-foreground/40" />
                           )}
                         </div>
                         <div className="product-card__body">

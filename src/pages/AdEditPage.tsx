@@ -13,48 +13,10 @@ import { AlertTriangle, ArrowLeft, Lightbulb, Loader2, RefreshCw, X } from 'luci
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { cleanPriceResponse, extractRecommendedPrice } from '@/lib/ai-utils';
 
 const CATEGORIES: Category[] = ['electronics', 'auto', 'real_estate'];
-
-function cleanPriceResponse(text: string): string {
-  let cleaned = text
-    .replace(/#{1,6}\s*/g, '')
-    .replace(/\*{2,3}(.*?)\*{2,3}/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/`{1,3}[^`]*`{1,3}/g, '')
-    .replace(/---+/g, '')
-    .replace(/^\s*[-*]\s+/gm, '• ')
-    .replace(/\n{3,}/g, '\n')
-    .trim();
-
-  const lines = cleaned.split('\n').filter(l => l.trim());
-  return lines.slice(0, 5).join('\n');
-}
-
-function extractRecommendedPrice(text: string): number | null {
-  const lines = text.split('\n');
-  for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (lower.includes('средн') || lower.includes('рекоменд') || lower.includes('оптимальн') || lower.includes('справедлив')) {
-      const numbers = line.match(/\d[\d\s]*\d/g);
-      if (numbers) {
-        for (const numStr of numbers) {
-          const num = Number(numStr.replace(/\s/g, ''));
-          if (num >= 1000) return num;
-        }
-      }
-    }
-  }
-  const currencyMatch = text.match(/(\d[\d\s]*\d)\s*(?:руб|₽|рублей)/i);
-  if (currencyMatch) {
-    const num = Number(currencyMatch[1].replace(/\s/g, ''));
-    if (num >= 1000) return num;
-  }
-  const allNumbers = (text.match(/\d[\d\s]*\d/g) || [])
-    .map(m => Number(m.replace(/\s/g, '')))
-    .filter(n => n >= 1000);
-  return allNumbers[0] ?? null;
-}
 
 export default function AdEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -199,7 +161,7 @@ export default function AdEditPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white px-8 lg:px-16 py-8" style={{ maxWidth: '680px' }}>
+      <div className="min-h-screen bg-background px-8 lg:px-16 py-8" style={{ maxWidth: '680px' }}>
         <Skeleton className="h-8 w-48 mb-6" />
         <Skeleton className="h-10 w-full mb-4" />
         <Skeleton className="h-10 w-full mb-4" />
@@ -210,7 +172,7 @@ export default function AdEditPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white px-8 lg:px-16 py-8">
+      <div className="min-h-screen bg-background px-8 lg:px-16 py-8">
         <div className="bg-destructive/10 text-destructive rounded-lg p-4 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" />
           {(error as Error).message}
@@ -224,15 +186,18 @@ export default function AdEditPage() {
   const aiButtonClass = "inline-flex items-center gap-1.5 text-sm font-medium rounded-full px-4 py-2 transition-colors border-none cursor-pointer";
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="mx-auto px-8 py-8" style={{ maxWidth: '680px' }}>
-        <h1 className="text-2xl font-bold mb-8">Редактирование объявления</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold">Редактирование объявления</h1>
+          <ThemeToggle />
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <Label className="text-sm text-gray-600">Категория</Label>
+            <Label className="text-sm text-muted-foreground">Категория</Label>
             <Select value={form.category} onValueChange={(v) => handleCategoryChange(v as Category)}>
-              <SelectTrigger className="bg-white border-gray-300">
+              <SelectTrigger className="bg-background border-input">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -244,17 +209,17 @@ export default function AdEditPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm text-gray-600">
+            <Label className="text-sm text-muted-foreground">
               <span className="text-red-500 mr-0.5">*</span> Название
             </Label>
             <div className="relative">
               <Input
                 value={form.title}
                 onChange={e => updateField('title', e.target.value)}
-                className={`bg-white border-gray-300 pr-8 ${!form.title.trim() ? 'border-amber-400' : ''}`}
+                className={`bg-background border-input pr-8 ${!form.title.trim() ? 'border-amber-400' : ''}`}
               />
               {form.title && (
-                <button type="button" onClick={() => updateField('title', '')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button type="button" onClick={() => updateField('title', '')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -262,7 +227,7 @@ export default function AdEditPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm text-gray-600">
+            <Label className="text-sm text-muted-foreground">
               <span className="text-red-500 mr-0.5">*</span> Цена
             </Label>
             <div className="flex items-center gap-3">
@@ -272,10 +237,10 @@ export default function AdEditPage() {
                   min={0}
                   value={form.price}
                   onChange={e => updateField('price', Number(e.target.value))}
-                  className={`bg-white border-gray-300 pr-8 ${!form.price ? 'border-amber-400' : ''}`}
+                  className={`bg-background border-input pr-8 ${!form.price ? 'border-amber-400' : ''}`}
                 />
                 {form.price > 0 && (
-                  <button type="button" onClick={() => updateField('price', 0)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => updateField('price', 0)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     <X className="h-4 w-4" />
                   </button>
                 )}
@@ -284,8 +249,7 @@ export default function AdEditPage() {
                 type="button"
                 disabled={aiLoading !== null}
                 onClick={() => requestAI('price')}
-                className={aiButtonClass}
-                style={{ backgroundColor: '#FFF3E0', color: '#E67E22', whiteSpace: 'nowrap' }}
+                className={`${aiButtonClass} bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400 whitespace-nowrap`}
               >
                 {aiLoading === 'price' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -298,22 +262,19 @@ export default function AdEditPage() {
               </button>
             </div>
             {(aiPrice || aiPriceError) && (
-              <div className="rounded-xl p-4 text-sm space-y-2" style={aiPriceError
-                ? { backgroundColor: '#FEF2F2', border: '1px solid #FECACA', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
-                : { backgroundColor: 'white', border: '1px solid #E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
-              }>
+              <div className={`rounded-xl p-4 text-sm space-y-2 shadow-md border ${aiPriceError ? 'bg-destructive/5 border-destructive/30' : 'bg-card border-border'}`}>
                 {aiPriceError ? (
                   <>
-                    <p className="font-medium" style={{ color: '#DC2626' }}>Произошла ошибка при запросе к AI</p>
-                    <p className="text-gray-500 text-sm">Попробуйте повторить запрос или закрыть уведомление</p>
-                    <Button type="button" size="sm" variant="outline" className="rounded-full px-4 mt-1" style={{ color: '#DC2626', borderColor: '#FCA5A5' }} onClick={() => setAiPriceError('')}>
+                    <p className="font-medium text-destructive">Произошла ошибка при запросе к AI</p>
+                    <p className="text-muted-foreground text-sm">Попробуйте повторить запрос или закрыть уведомление</p>
+                    <Button type="button" size="sm" variant="outline" className="rounded-full px-4 mt-1 text-destructive border-destructive/40" onClick={() => setAiPriceError('')}>
                       Закрыть
                     </Button>
                   </>
                 ) : (
                   <>
                     <p className="font-medium">Ответ AI:</p>
-                    <p className="text-gray-600 whitespace-pre-wrap">{aiPrice}</p>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{aiPrice}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
                         const price = extractRecommendedPrice(aiPrice);
@@ -341,16 +302,16 @@ export default function AdEditPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm text-gray-600">Описание</Label>
+            <Label className="text-sm text-muted-foreground">Описание</Label>
             <div className="relative">
               <Textarea
                 value={form.description || ''}
                 onChange={e => updateField('description', e.target.value)}
                 rows={4}
                 maxLength={1000}
-                className="bg-white border-gray-300 resize-none"
+                className="bg-background border-input resize-none"
               />
-              <span className="absolute bottom-2 right-3 text-xs text-gray-400">
+              <span className="absolute bottom-2 right-3 text-xs text-muted-foreground">
                 {(form.description || '').length} / 1000
               </span>
             </div>
@@ -358,8 +319,7 @@ export default function AdEditPage() {
               type="button"
               disabled={aiLoading !== null}
               onClick={() => requestAI('description')}
-              className={aiButtonClass}
-              style={{ backgroundColor: '#FFF3E0', color: '#E67E22' }}
+              className={`${aiButtonClass} bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400`}
             >
               {aiLoading === 'description' ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -371,22 +331,19 @@ export default function AdEditPage() {
               {aiLoading === 'description' ? 'Выполняется запрос' : aiDescriptionRequested ? 'Повторить запрос' : form.description ? 'Улучшить описание' : 'Придумать описание'}
             </button>
             {(aiDescription || aiDescriptionError) && (
-              <div className="rounded-xl p-4 text-sm space-y-2" style={aiDescriptionError
-                ? { backgroundColor: '#FEF2F2', border: '1px solid #FECACA', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
-                : { backgroundColor: 'white', border: '1px solid #E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
-              }>
+              <div className={`rounded-xl p-4 text-sm space-y-2 shadow-md border ${aiDescriptionError ? 'bg-destructive/5 border-destructive/30' : 'bg-card border-border'}`}>
                 {aiDescriptionError ? (
                   <>
-                    <p className="font-medium" style={{ color: '#DC2626' }}>Произошла ошибка при запросе к AI</p>
-                    <p className="text-gray-500 text-sm">Попробуйте повторить запрос или закрыть уведомление</p>
-                    <Button type="button" size="sm" variant="outline" className="rounded-full px-4 mt-1" style={{ color: '#DC2626', borderColor: '#FCA5A5' }} onClick={() => setAiDescriptionError('')}>
+                    <p className="font-medium text-destructive">Произошла ошибка при запросе к AI</p>
+                    <p className="text-muted-foreground text-sm">Попробуйте повторить запрос или закрыть уведомление</p>
+                    <Button type="button" size="sm" variant="outline" className="rounded-full px-4 mt-1 text-destructive border-destructive/40" onClick={() => setAiDescriptionError('')}>
                       Закрыть
                     </Button>
                   </>
                 ) : (
                   <>
                     <p className="font-medium">Ответ AI:</p>
-                    <p className="text-gray-600 whitespace-pre-wrap">{aiDescription}</p>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{aiDescription}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
                         updateField('description', aiDescription);
@@ -432,11 +389,11 @@ function ClearableInput({ value, onChange, onClear, warn, ...props }: {
       <Input
         value={value}
         onChange={onChange}
-        className={`bg-white border-gray-300 pr-8 ${warn && !hasValue ? 'border-amber-400' : ''}`}
+        className={`bg-background border-input pr-8 ${warn && !hasValue ? 'border-amber-400' : ''}`}
         {...props}
       />
       {hasValue && (
-        <button type="button" onClick={onClear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+        <button type="button" onClick={onClear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
         </button>
       )}
@@ -450,8 +407,8 @@ function CategoryParams({ category, params, updateParam }: {
   updateParam: (key: string, value: unknown) => void;
 }) {
   const fieldClass = "space-y-1.5";
-  const labelClass = "text-sm text-gray-600";
-  const inputClass = "bg-white border-gray-300";
+  const labelClass = "text-sm text-muted-foreground";
+  const inputClass = "bg-background border-input";
 
   const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
     <Label className={labelClass}><span className="text-red-500 mr-0.5">*</span> {children}</Label>

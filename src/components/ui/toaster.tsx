@@ -12,19 +12,19 @@ export function Toaster() {
         const isError = props.variant === 'destructive';
 
         const icon = isSuccess
-          ? <CheckCircle2 className="h-5 w-5 shrink-0" style={{ color: '#52C41A' }} />
+          ? <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
           : isError
-            ? <XCircle className="h-5 w-5 shrink-0" style={{ color: '#FF4D4F' }} />
+            ? <XCircle className="h-5 w-5 shrink-0 text-red-500 dark:text-red-400" />
             : null;
 
-        const toastStyle = isSuccess
-          ? { backgroundColor: '#F6FFED', border: 'none', borderLeft: '4px solid #52C41A' }
+        const toastClass = isSuccess
+          ? 'bg-green-50 dark:bg-green-950/50 border-none border-l-4 border-l-green-500 dark:border-l-green-400 text-foreground'
           : isError
-            ? { backgroundColor: '#FFF2F0', border: 'none', borderLeft: '4px solid #FF4D4F' }
-            : undefined;
+            ? 'bg-red-50 dark:bg-red-950/50 border-none border-l-4 border-l-red-500 dark:border-l-red-400 text-foreground'
+            : '';
 
         return (
-          <Toast key={id} {...props} style={toastStyle}>
+          <Toast key={id} {...props} className={toastClass}>
             <div className="flex items-start gap-3">
               {icon}
               <div className="grid gap-1">

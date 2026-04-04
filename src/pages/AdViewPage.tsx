@@ -5,6 +5,7 @@ import { Category, AutoItemParams, RealEstateItemParams, ElectronicsItemParams }
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, ArrowLeft, Package } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 function getParamLabels(category: Category, params: Record<string, unknown>): { label: string; value: string }[] {
   const result: { label: string; value: string }[] = [];
@@ -109,15 +110,16 @@ export default function AdViewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="bg-gray-100 px-8 lg:px-16 pt-6 pb-6">
-        <div className="flex items-center gap-3 mb-4">
+    <div className="min-h-screen bg-background">
+      <div className="bg-background px-8 lg:px-16 pt-6 pb-6">
+        <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/ads">
               <ArrowLeft className="h-4 w-4 mr-1" />
               Назад
             </Link>
           </Button>
+          <ThemeToggle />
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -146,25 +148,25 @@ export default function AdViewPage() {
         </div>
       </div>
 
-      <div className="border-t border-gray-200 mx-8 lg:mx-16" />
+      <div className="border-t border-border mx-8 lg:mx-16" />
 
       <div className="px-8 lg:px-16 py-8">
         <div className="flex flex-col md:flex-row gap-6" style={{ maxWidth: '900px' }}>
           <div className="shrink-0" style={{ width: '480px' }}>
-            <div className="bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-center overflow-hidden" style={{ height: '360px' }}>
+            <div className="bg-muted border border-border rounded-xl flex items-center justify-center overflow-hidden" style={{ height: '360px' }}>
               {item.image ? (
                 <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
               ) : (
-                <Package className="h-16 w-16 text-gray-300" />
+                <Package className="h-16 w-16 text-muted-foreground/40" />
               )}
             </div>
           </div>
 
           <div className="flex-1 space-y-6 min-w-0">
             {missingFields.length > 0 && (
-              <div className="rounded-xl p-4 shadow-sm" style={{ backgroundColor: '#FFF3E0', boxShadow: '0 1px 6px rgba(245, 158, 11, 0.15)' }}>
+              <div className="rounded-xl p-4 shadow-sm bg-warning/10 border border-warning/20">
                 <div className="flex items-center gap-2 font-semibold text-sm mb-2">
-                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full text-white text-xs font-bold" style={{ backgroundColor: '#F59E0B' }}>!</span>
+                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full text-white text-xs font-bold bg-warning">!</span>
                   Требуются доработки
                 </div>
                 <p className="text-sm text-muted-foreground mb-1">
