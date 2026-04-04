@@ -9,12 +9,52 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, ArrowLeft, Lightbulb, Loader2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Lightbulb, Loader2, RefreshCw, X } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const CATEGORIES: Category[] = ['electronics', 'auto', 'real_estate'];
+
+function cleanPriceResponse(text: string): string {
+  let cleaned = text
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\*{2,3}(.*?)\*{2,3}/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/---+/g, '')
+    .replace(/^\s*[-*]\s+/gm, '• ')
+    .replace(/\n{3,}/g, '\n')
+    .trim();
+
+  const lines = cleaned.split('\n').filter(l => l.trim());
+  return lines.slice(0, 5).join('\n');
+}
+
+function extractRecommendedPrice(text: string): number | null {
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (lower.includes('средн') || lower.includes('рекоменд') || lower.includes('оптимальн') || lower.includes('справедлив')) {
+      const numbers = line.match(/\d[\d\s]*\d/g);
+      if (numbers) {
+        for (const numStr of numbers) {
+          const num = Number(numStr.replace(/\s/g, ''));
+          if (num >= 1000) return num;
+        }
+      }
+    }
+  }
+  const currencyMatch = text.match(/(\d[\d\s]*\d)\s*(?:руб|₽|рублей)/i);
+  if (currencyMatch) {
+    const num = Number(currencyMatch[1].replace(/\s/g, ''));
+    if (num >= 1000) return num;
+  }
+  const allNumbers = (text.match(/\d[\d\s]*\d/g) || [])
+    .map(m => Number(m.replace(/\s/g, '')))
+    .filter(n => n >= 1000);
+  return allNumbers[0] ?? null;
+}
 
 export default function AdEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +74,10 @@ export default function AdEditPage() {
   const [aiDescription, setAiDescription] = useState('');
   const [aiPrice, setAiPrice] = useState('');
   const [aiLoading, setAiLoading] = useState<'description' | 'price' | null>(null);
+  const [aiPriceError, setAiPriceError] = useState('');
+  const [aiDescriptionError, setAiDescriptionError] = useState('');
+  const [aiPriceRequested, setAiPriceRequested] = useState(false);
+  const [aiDescriptionRequested, setAiDescriptionRequested] = useState(false);
 
   const { data: item, isLoading, error } = useQuery({
     queryKey: ['item', id],
@@ -123,6 +167,15 @@ export default function AdEditPage() {
 
   const requestAI = async (type: 'description' | 'price') => {
     setAiLoading(type);
+    if (type === 'price') {
+      setAiPriceError('');
+      setAiPrice('');
+      setAiPriceRequested(true);
+    } else {
+      setAiDescriptionError('');
+      setAiDescription('');
+      setAiDescriptionRequested(true);
+    }
     try {
       const { data, error } = await supabase.functions.invoke('ai-assistant', {
         body: { type, item: form },
@@ -131,10 +184,14 @@ export default function AdEditPage() {
       if (type === 'description') {
         setAiDescription(data.result);
       } else {
-        setAiPrice(data.result);
+        setAiPrice(cleanPriceResponse(data.result));
       }
     } catch (err) {
-      toast({ title: 'Ошибка AI', description: (err as Error).message, variant: 'destructive' });
+      if (type === 'price') {
+        setAiPriceError((err as Error).message);
+      } else {
+        setAiDescriptionError((err as Error).message);
+      }
     } finally {
       setAiLoading(null);
     }
@@ -232,49 +289,51 @@ export default function AdEditPage() {
               >
                 {aiLoading === 'price' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : aiPriceRequested ? (
+                  <RefreshCw className="h-4 w-4" />
                 ) : (
                   <Lightbulb className="h-4 w-4" />
                 )}
-                Узнать рыночную цену
+                {aiLoading === 'price' ? 'Выполняется запрос' : aiPriceRequested ? 'Повторить запрос' : 'Узнать рыночную цену'}
               </button>
             </div>
-          </div>
-
-          {aiPrice && (
-            <div className="rounded-xl p-4 text-sm space-y-2" style={{ backgroundColor: '#FFF8F0', border: '1px solid #FDEBD0' }}>
-              <p className="font-medium">Ответ AI:</p>
-              <p className="text-gray-600 whitespace-pre-wrap">{aiPrice}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
-                  const match = aiPrice.match(/[\d\s]+/);
-                  if (match) {
-                    const price = Number(match[0].replace(/\s/g, ''));
-                    if (price > 0) updateField('price', price);
-                  }
-                  toast({ title: 'Цена применена' });
-                }}>
-                  Применить
-                </Button>
-                <button type="button" className="text-sm text-gray-500 hover:text-gray-700" onClick={() => setAiPrice('')}>
-                  Закрыть
-                </button>
+            {(aiPrice || aiPriceError) && (
+              <div className="rounded-xl p-4 text-sm space-y-2" style={aiPriceError
+                ? { backgroundColor: '#FEF2F2', border: '1px solid #FECACA', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
+                : { backgroundColor: 'white', border: '1px solid #E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
+              }>
+                {aiPriceError ? (
+                  <>
+                    <p className="font-medium" style={{ color: '#DC2626' }}>Произошла ошибка при запросе к AI</p>
+                    <p className="text-gray-500 text-sm">Попробуйте повторить запрос или закрыть уведомление</p>
+                    <Button type="button" size="sm" variant="outline" className="rounded-full px-4 mt-1" style={{ color: '#DC2626', borderColor: '#FCA5A5' }} onClick={() => setAiPriceError('')}>
+                      Закрыть
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium">Ответ AI:</p>
+                    <p className="text-gray-600 whitespace-pre-wrap">{aiPrice}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
+                        const price = extractRecommendedPrice(aiPrice);
+                        if (price) {
+                          updateField('price', price);
+                          toast({ title: 'Цена применена' });
+                        }
+                        setAiPrice('');
+                      }}>
+                        Применить
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" className="rounded-full px-4" onClick={() => setAiPrice('')}>
+                        Закрыть
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
-              <button
-                type="button"
-                disabled={aiLoading !== null}
-                onClick={() => requestAI('price')}
-                className={aiButtonClass + ' mt-1'}
-                style={{ backgroundColor: '#FFF3E0', color: '#E67E22' }}
-              >
-                {aiLoading === 'price' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Lightbulb className="h-4 w-4" />
-                )}
-                Повторить запрос
-              </button>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="space-y-4">
             <h2 className="text-base font-semibold">Характеристики</h2>
@@ -304,31 +363,47 @@ export default function AdEditPage() {
             >
               {aiLoading === 'description' ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
+              ) : aiDescriptionRequested ? (
+                <RefreshCw className="h-4 w-4" />
               ) : (
                 <Lightbulb className="h-4 w-4" />
               )}
-              {form.description ? 'Улучшить описание' : 'Придумать описание'}
+              {aiLoading === 'description' ? 'Выполняется запрос' : aiDescriptionRequested ? 'Повторить запрос' : form.description ? 'Улучшить описание' : 'Придумать описание'}
             </button>
-          </div>
-
-          {aiDescription && (
-            <div className="rounded-xl p-4 text-sm space-y-2" style={{ backgroundColor: '#FFF8F0', border: '1px solid #FDEBD0' }}>
-              <p className="font-medium">Предложенное описание:</p>
-              <p className="text-gray-600 whitespace-pre-wrap">{aiDescription}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
-                  updateField('description', aiDescription);
-                  setAiDescription('');
-                  toast({ title: 'Описание применено' });
-                }}>
-                  Применить
-                </Button>
-                <button type="button" className="text-sm text-gray-500 hover:text-gray-700" onClick={() => setAiDescription('')}>
-                  Закрыть
-                </button>
+            {(aiDescription || aiDescriptionError) && (
+              <div className="rounded-xl p-4 text-sm space-y-2" style={aiDescriptionError
+                ? { backgroundColor: '#FEF2F2', border: '1px solid #FECACA', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
+                : { backgroundColor: 'white', border: '1px solid #E5E7EB', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }
+              }>
+                {aiDescriptionError ? (
+                  <>
+                    <p className="font-medium" style={{ color: '#DC2626' }}>Произошла ошибка при запросе к AI</p>
+                    <p className="text-gray-500 text-sm">Попробуйте повторить запрос или закрыть уведомление</p>
+                    <Button type="button" size="sm" variant="outline" className="rounded-full px-4 mt-1" style={{ color: '#DC2626', borderColor: '#FCA5A5' }} onClick={() => setAiDescriptionError('')}>
+                      Закрыть
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium">Ответ AI:</p>
+                    <p className="text-gray-600 whitespace-pre-wrap">{aiDescription}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button type="button" size="sm" className="rounded-full px-4" onClick={() => {
+                        updateField('description', aiDescription);
+                        setAiDescription('');
+                        toast({ title: 'Описание применено' });
+                      }}>
+                        Применить
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" className="rounded-full px-4" onClick={() => setAiDescription('')}>
+                        Закрыть
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="flex gap-3 pt-4">
             <Button type="submit" disabled={mutation.isPending} className="rounded-full px-6">

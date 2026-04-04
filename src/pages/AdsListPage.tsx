@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, ChevronLeft, ChevronRight, AlertTriangle, Package, Grid3x3, List } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import '@/components/ProductCard.css';
+import { loadDraft } from '@/lib/drafts';
 
 const ITEMS_PER_PAGE = 10;
 const CATEGORIES: Category[] = ['electronics', 'auto', 'real_estate'];
@@ -221,37 +222,42 @@ export default function AdsListPage() {
             ) : (
               <>
                 <div className={viewMode === 'grid' ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-2 gap-x-2 justify-items-center" : "space-y-3"}>
-                  {data?.items.map(item => (
-                    <article
-                      key={item.id}
-                      className={`product-card ${viewMode === 'list' ? 'product-card--list' : 'product-card--grid'}`}
-                      onClick={() => navigate(`/ads/${item.id}`)}
-                    >
-                      <div className="product-card__media">
-                        {item.image ? (
-                          <img src={item.image} alt={item.title} className="product-card__image" />
-                        ) : (
-                          <Package className="h-12 w-12 text-gray-300" />
-                        )}
-                      </div>
-                      <div className="product-card__body">
-                        <span className="product-card__category">
-                          {CATEGORY_LABELS[item.category]}
-                        </span>
-                        <h3 className="product-card__title">
-                          {item.title}
-                        </h3>
-                        <p className="product-card__price">
-                          {item.price.toLocaleString('ru-RU')} ₽
-                        </p>
-                        {item.needsRevision && (
-                          <div className="product-card__badge">
-                            Требует доработок
-                          </div>
-                        )}
-                      </div>
-                    </article>
-                  ))}
+                  {data?.items.map(item => {
+                    const draft = loadDraft(String(item.id));
+                    const title = draft?.title || item.title;
+                    const price = draft?.price ?? item.price;
+                    return (
+                      <article
+                        key={item.id}
+                        className={`product-card ${viewMode === 'list' ? 'product-card--list' : 'product-card--grid'}`}
+                        onClick={() => navigate(`/ads/${item.id}`)}
+                      >
+                        <div className="product-card__media">
+                          {item.image ? (
+                            <img src={item.image} alt={title} className="product-card__image" />
+                          ) : (
+                            <Package className="h-12 w-12 text-gray-300" />
+                          )}
+                        </div>
+                        <div className="product-card__body">
+                          <span className="product-card__category">
+                            {CATEGORY_LABELS[item.category]}
+                          </span>
+                          <h3 className="product-card__title">
+                            {title}
+                          </h3>
+                          <p className="product-card__price">
+                            {price.toLocaleString('ru-RU')} ₽
+                          </p>
+                          {item.needsRevision && (
+                            <div className="product-card__badge">
+                              Требует доработок
+                            </div>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
 
                 {totalPages > 1 && (
