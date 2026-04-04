@@ -1,96 +1,53 @@
-# ShokVito 
+# Личный кабинет продавца с AI-ассистентом
+
+Веб-приложение для управления объявлениями на маркетплейсе с интегрированным AI-ассистентом для улучшения описаний и рекомендации цен.
 
 ## Функциональность
 
-- **Список объявлений** с фильтрацией по категориям, поиском и сортировкой
-- **Просмотр объявления** со всеми параметрами
-- **Редактирование объявлений** с сохранением в БД
-- **AI-ассистент** для генерации описаний и рекомендации цен
-- **Интеграция Supabase** для бэкенда
-- **Адаптивный дизайн** с использованием Tailwind CSS
+- **Список объявлений** — фильтрация по категориям, поиск, сортировка, пагинация
+- **Просмотр объявления** — полная информация, характеристики по категории, блок «Требуются доработки»
+- **Редактирование** — форма с автосохранением черновика в localStorage
+- **AI-ассистент** — генерация описаний и рекомендация рыночных цен через LLM
 
 ## Быстрый старт
 
 ### Требования
 
 - Node.js 18+
-- pnpm или npm
-- Бэкенд API на http://localhost:8080
+- npm
 
-### Установка зависимостей
+### 1. Запуск бэкенда
 
 ```bash
-pnpm install
-# или
+cd server
 npm install
+npm start
 ```
 
-### Запуск в режиме разработки
+Сервер запустится на **http://localhost:8080**.
+
+### 2. Запуск фронтенда
 
 ```bash
-pnpm dev
-# или
+npm install
 npm run dev
 ```
 
 Приложение будет доступно по адресу: **http://localhost:3000**
 
-### Сборка для продакшена
+### 3. Настройка AI-ассистента
 
-```bash
-pnpm build
-pnpm preview
-```
+AI-ассистент работает через Supabase Edge Function (`supabase/functions/ai-assistant/index.ts`).
 
-## Настройка LLM (AI-ассистент)
-
-### Суть
-
-AI-ассистент работает как **Supabase Edge Function** для генерации:
-- Описаний товаров (copywriting)
-- Рекомендаций по цене
-
-Функция находится в: `supabase/functions/ai-assistant/index.ts`
-
-### Текущая конфигурация
-
-```typescript
-model: "google/gemini-3-flash-preview"
-gateway: "https://ai.gateway.shokvito.dev/v1/chat/completions"
-```
-
-### Настройка собственного LLM
-
-#### Вариант 1: Google Gemini API
-
-1. Получи API ключ на [Google AI Studio](https://aistudio.google.com)
-2. Обнови `supabase/functions/ai-assistant/index.ts`:
-
-```typescript
-const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${SHOKVITO_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    model: "gemini-1.5-flash",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-  }),
-});
-```
-
-3. Добавь переменную окружения в `.env`:
+Создайте файл `.env` в корне проекта:
 
 ```env
-VITE_SUPABASE_URL="твой_supabase_url"
-VITE_SUPABASE_ANON_KEY="твой_ключ"
-SHOKVITO_API_KEY="твой_gemini_api_key"
+VITE_SUPABASE_URL=ваш_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=ваш_supabase_ключ
+SHOKVITO_API_KEY=ваш_api_ключ_для_llm
 ```
 
+Для использования Google Gemini API — получите ключ на [Google AI Studio](https://aistudio.google.com) и обновите gateway URL в `supabase/functions/ai-assistant/index.ts`.
 
 ## Структура проекта
 
@@ -98,63 +55,44 @@ SHOKVITO_API_KEY="твой_gemini_api_key"
 src/
 ├── pages/              # Страницы (список, просмотр, редактирование)
 ├── components/         # UI компоненты (shadcn/ui)
-├── lib/               # Утилиты (API, drafts)
-├── hooks/             # React хуки
-├── integrations/      # Интеграции (Supabase)
-├── types/             # TypeScript типы
-├── test/              # Тесты
-└── main.tsx           # Точка входа
+├── lib/                # Утилиты (API клиент, черновики)
+├── hooks/              # React хуки
+├── integrations/       # Интеграция с Supabase
+├── types/              # TypeScript типы
+├── test/               # Тесты
+└── main.tsx            # Точка входа
 
-supabase/
-└── functions/
-    └── ai-assistant/  # Serverless функция для AI
-```
-
-## Переменные окружения
-
-```env
-VITE_SUPABASE_URL=твой_supabase_url
-VITE_SUPABASE_ANON_KEY=твой_supabase_ключ
-SHOKVITO_API_KEY=твой_ai_api_ключ
+server/                 # Бэкенд API (предоставлен в задании)
+supabase/functions/     # Edge Function для AI-ассистента
 ```
 
 ## Технологический стек
 
-- React 18 - UI фреймворк
-- TypeScript - Типизация
-- Vite - Сборщик
-- React Router - Маршрутизация
-- React Query - Управление состоянием
-- Tailwind CSS - Стили
-- shadcn/ui - UI компоненты
-- Supabase - БД и Edge Functions
-- Playwright - E2E тесты
+- **React 18** — UI фреймворк
+- **TypeScript** — типизация
+- **Vite** — сборщик
+- **React Router** — маршрутизация
+- **TanStack React Query** — управление серверным состоянием
+- **Tailwind CSS** — стили
+- **shadcn/ui** — UI компоненты
+- **Supabase** — Edge Functions для AI
+- **ESLint + Prettier** — линтинг и форматирование
+- **Vitest** — тесты
 
-## Запуск тестов
+## Скрипты
 
 ```bash
-# Unit тесты
-pnpm test
-
-# E2E тесты
-pnpm test:e2e
-
-# Playwright UI
-pnpm test:ui
+npm run dev        # Запуск dev-сервера
+npm run build      # Сборка для продакшена
+npm run preview    # Превью сборки
+npm run lint       # Проверка ESLint
+npm run format     # Форматирование Prettier
+npm test           # Запуск тестов
 ```
 
-## Troubleshooting
+## Принятые решения
 
-### Ошибка 404 при клике на объявление
-- Убедись, что бэкенд API запущен на http://localhost:8080
-- Проверь консоль браузера (F12) на ошибки сети
-
-### AI-ассистент не работает
-- Убедись, что в `.env` установлены правильные переменные `SHOKVITO_API_KEY`
-- Проверь лимиты API у поставщика
-- В консоли браузера должны быть подробные ошибки
-
-### CSS не применяется
-- Очисти кэш браузера (Ctrl+Shift+Delete)
-- Пересоберись: `pnpm build`
-
+- **TanStack React Query** используется как основной инструмент для управления серверным состоянием и кэширования — отдельный стейт-менеджер (Redux/Zustand) не нужен, т.к. весь стейт либо серверный (React Query), либо локальный (useState/useRef).
+- **Supabase Edge Functions** выбраны для AI-интеграции, чтобы не хранить API-ключи на клиенте.
+- **localStorage** используется для автосохранения черновиков при редактировании — черновик восстанавливается при повторном входе на страницу.
+- **Клиентская сортировка по цене** — API не поддерживает сортировку по цене, поэтому она реализована на стороне клиента в пределах текущей страницы.

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { fetchItem, updateItem } from '@/lib/api';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/drafts';
 import { CATEGORY_LABELS, Category, ItemUpdateIn, AutoItemParams, RealEstateItemParams, ElectronicsItemParams } from '@/types/api';
