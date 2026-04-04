@@ -43,7 +43,7 @@ export default function AdEditPage() {
 
   const { data: item, isLoading, error } = useQuery({
     queryKey: ['item', id],
-    queryFn: () => fetchItem(id!),
+    queryFn: ({ signal }) => fetchItem(id!, signal),
     enabled: !!id,
   });
 

@@ -47,7 +47,7 @@ describe('fetchItem', () => {
     mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(item) });
 
     const result = await fetchItem('1');
-    expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/items/1');
+    expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/items/1', { signal: undefined });
     expect(result).toEqual(item);
   });
 

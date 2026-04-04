@@ -39,7 +39,7 @@ export default function AdsListPage() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['items', debouncedSearch, page, sortColumn, sortDirection, selectedCategories.join(','), needsRevision],
-    queryFn: () => fetchItems({
+    queryFn: ({ signal }) => fetchItems({
       q: debouncedSearch || undefined,
       limit: ITEMS_PER_PAGE,
       skip: (page - 1) * ITEMS_PER_PAGE,
@@ -47,7 +47,7 @@ export default function AdsListPage() {
       sortDirection,
       categories: selectedCategories.length ? selectedCategories.join(',') : undefined,
       needsRevision: needsRevision || undefined,
-    }).then(result => {
+    }, signal).then(result => {
       let items = result.items;
       
       if (sortColumn === 'price') {

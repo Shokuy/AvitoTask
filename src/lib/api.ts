@@ -1,8 +1,8 @@
 import { Item, ItemsResponse, ItemsQueryParams, ItemUpdateIn } from '@/types/api';
 
-const API_BASE = 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
-export async function fetchItems(params: ItemsQueryParams): Promise<ItemsResponse> {
+export async function fetchItems(params: ItemsQueryParams, signal?: AbortSignal): Promise<ItemsResponse> {
   const searchParams = new URLSearchParams();
   if (params.q) searchParams.set('q', params.q);
   if (params.limit) searchParams.set('limit', String(params.limit));
@@ -12,13 +12,13 @@ export async function fetchItems(params: ItemsQueryParams): Promise<ItemsRespons
   if (params.sortColumn) searchParams.set('sortColumn', params.sortColumn);
   if (params.sortDirection) searchParams.set('sortDirection', params.sortDirection);
 
-  const res = await fetch(`${API_BASE}/items?${searchParams.toString()}`);
+  const res = await fetch(`${API_BASE}/items?${searchParams.toString()}`, { signal });
   if (!res.ok) throw new Error('Ошибка загрузки объявлений');
   return res.json();
 }
 
-export async function fetchItem(id: string): Promise<Item> {
-  const res = await fetch(`${API_BASE}/items/${id}`);
+export async function fetchItem(id: string, signal?: AbortSignal): Promise<Item> {
+  const res = await fetch(`${API_BASE}/items/${id}`, { signal });
   if (!res.ok) throw new Error('Объявление не найдено');
   return res.json();
 }
